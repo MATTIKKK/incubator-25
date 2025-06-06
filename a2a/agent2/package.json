@@ -1,0 +1,14 @@
+{
+  "name": "agent2",
+  "version": "1.0.0",
+  "description": "Agent.js implementation for A2A protocol",
+  "main": "agent.js",
+  "type": "module",
+  "scripts": {
+    "start": "node agent.js"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "dotenv": "^16.3.1"
+  }
+}
