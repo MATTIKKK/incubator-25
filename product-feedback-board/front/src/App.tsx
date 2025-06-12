@@ -10,6 +10,18 @@ import { useStore } from './store/useStore';
 import { useFilteredIdeas } from './hooks/useFilteredIdeas';
 import { downloadFile, uploadFile, generateExportFilename } from './utils/dataUtils';
 import type { Idea } from './types';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { useAuthStore } from './store/authStore';
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { token } = useAuthStore();
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+  return <>{children}</>;
+};
 
 function App() {
   const {
@@ -24,11 +36,11 @@ function App() {
     reorderIdeas,
     exportData,
     importData,
-    getStatistics
+    getStatistics,
   } = useStore();
 
   const filteredIdeas = useFilteredIdeas(ideas, filterAndSort.filter, filterAndSort.sort);
-  
+
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [showStats, setShowStats] = useState(false);
 
@@ -51,46 +63,59 @@ function App() {
   };
 
   return (
-    <ThemeProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-        <Header
-          onShowStats={() => setShowStats(true)}
-          onExport={handleExport}
-          onImport={handleImport}
+    <Router>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <ThemeProvider>
+                <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
+                  <Header
+                    onShowStats={() => setShowStats(true)}
+                    onExport={handleExport}
+                    onImport={handleImport}
+                  />
+
+                  <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <FilterControls
+                      filter={filterAndSort.filter}
+                      sort={filterAndSort.sort}
+                      onFilterChange={setFilter}
+                      onSortChange={setSort}
+                    />
+
+                    <AddIdeaForm onAdd={addIdea} />
+
+                    <IdeaList
+                      ideas={filteredIdeas}
+                      onVote={voteIdea}
+                      onEdit={setEditingIdea}
+                      onDelete={deleteIdea}
+                      onReorder={reorderIdeas}
+                    />
+                  </main>
+
+                  <EditIdeaModal
+                    idea={editingIdea}
+                    onSave={updateIdea}
+                    onClose={() => setEditingIdea(null)}
+                  />
+
+                  <StatisticsModal
+                    isOpen={showStats}
+                    statistics={getStatistics()}
+                    onClose={() => setShowStats(false)}
+                  />
+                </div>
+              </ThemeProvider>
+            </ProtectedRoute>
+          }
         />
-
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <FilterControls
-            filter={filterAndSort.filter}
-            sort={filterAndSort.sort}
-            onFilterChange={setFilter}
-            onSortChange={setSort}
-          />
-
-          <AddIdeaForm onAdd={addIdea} />
-
-          <IdeaList
-            ideas={filteredIdeas}
-            onVote={voteIdea}
-            onEdit={setEditingIdea}
-            onDelete={deleteIdea}
-            onReorder={reorderIdeas}
-          />
-        </main>
-
-        <EditIdeaModal
-          idea={editingIdea}
-          onSave={updateIdea}
-          onClose={() => setEditingIdea(null)}
-        />
-
-        <StatisticsModal
-          isOpen={showStats}
-          statistics={getStatistics()}
-          onClose={() => setShowStats(false)}
-        />
-      </div>
-    </ThemeProvider>
+      </Routes>
+    </Router>
   );
 }
 
